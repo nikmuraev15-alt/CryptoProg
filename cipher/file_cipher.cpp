@@ -8,7 +8,7 @@
 #include <cryptopp/pwdbased.h>
 #include <cryptopp/osrng.h>
 #include <cryptopp/hex.h>
-#include <cryptopp/files.h>  // ДОБАВИТЬ ЭТУ СТРОКУ!
+#include <cryptopp/files.h>
 
 using namespace CryptoPP;
 
@@ -51,23 +51,14 @@ void EncryptFile(const std::string& inputFile,
         CBC_Mode<AES>::Encryption encryptor;
         encryptor.SetKeyWithIV(key, KEY_SIZE, iv, IV_SIZE);
         
-        // Шифрование файла - ИСПРАВЛЕННЫЙ СИНТАКСИС
+        // Шифрование файла
         FileSource(inputFile.c_str(), true,
             new StreamTransformationFilter(encryptor,
                 new FileSink(outputFile.c_str())
             )
         );
         
-        std::cout << "Файл успешно зашифрован: " << outputFile << std::endl;
-        
-        // Выводим IV для отладки (опционально)
-        std::string ivHex;
-        StringSource(iv, IV_SIZE, true,
-            new HexEncoder(
-                new StringSink(ivHex)
-            )
-        );
-        std::cout << "IV (hex): " << ivHex << std::endl;
+        std::cout << "Файл зашифрован: " << outputFile << std::endl;
         
     } catch(const Exception& e) {
         std::cerr << "Ошибка при шифровании: " << e.what() << std::endl;
@@ -94,20 +85,14 @@ void DecryptFile(const std::string& inputFile,
         CBC_Mode<AES>::Decryption decryptor;
         decryptor.SetKeyWithIV(key, KEY_SIZE, iv, IV_SIZE);
         
-        // Расшифрование файла - ИСПРАВЛЕННЫЙ СИНТАКСИС
+        // Расшифрование файла
         FileSource(inputFile.c_str(), true,
             new StreamTransformationFilter(decryptor,
                 new FileSink(outputFile.c_str())
             )
         );
         
-        std::cout << "Файл успешно расшифрован: " << outputFile << std::endl;
-        
-        // Показать содержимое расшифрованного файла
-        std::ifstream decryptedFile(outputFile);
-        std::string content((std::istreambuf_iterator<char>(decryptedFile)),
-                           std::istreambuf_iterator<char>());
-        std::cout << "Содержимое: " << content << std::endl;
+        std::cout << "Файл расшифрован: " << outputFile << std::endl;
         
     } catch(const Exception& e) {
         std::cerr << "Ошибка при расшифровании: " << e.what() << std::endl;
@@ -116,14 +101,12 @@ void DecryptFile(const std::string& inputFile,
 }
 
 int main(int argc, char* argv[]) {
-    // Устанавливаем локаль для поддержки русского текста
-    std::locale::global(std::locale(""));
     
     // Проверяем аргументы
     if (argc != 5) {
         std::cerr << "Использование:" << std::endl;
-        std::cerr << "  Шифрование: " << argv[0] << " -e <входной файл> <выходной файл> <пароль>" << std::endl;
-        std::cerr << "  Расшифрование: " << argv[0] << " -d <входной файл> <выходной файл> <пароль>" << std::endl;
+        std::cerr << "  Шифрование: " << argv[0] << " encrypt <входной файл> <выходной файл> <пароль>" << std::endl;
+        std::cerr << "  Расшифрование: " << argv[0] << " decrypt <входной файл> <выходной файл> <пароль>" << std::endl;
         return 1;
     }
     
@@ -133,12 +116,12 @@ int main(int argc, char* argv[]) {
     std::string password = argv[4];
     
     try {
-        if (mode == "-e") {
+        if (mode == "encrypt") {
             EncryptFile(inputFile, outputFile, password);
-        } else if (mode == "-d") {
+        } else if (mode == "decrypt") {
             DecryptFile(inputFile, outputFile, password);
         } else {
-            std::cerr << "Неверный режим. Используйте -e для шифрования или -d для расшифрования." << std::endl;
+            std::cerr << "Неверный режим. Используйте 'encrypt' для шифрования или 'decrypt' для расшифрования." << std::endl;
             return 1;
         }
     } catch(...) {
