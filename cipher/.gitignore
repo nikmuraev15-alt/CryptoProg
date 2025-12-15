@@ -1,1 +1,5 @@
-
+*.o
+file_cipher
+*.enc
+*.dec
+*.swp
