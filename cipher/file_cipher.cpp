@@ -7,6 +7,8 @@
 #include <cryptopp/sha.h>
 #include <cryptopp/pwdbased.h>
 #include <cryptopp/osrng.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/files.h>  // ДОБАВИТЬ ЭТУ СТРОКУ!
 
 using namespace CryptoPP;
 
@@ -49,14 +51,23 @@ void EncryptFile(const std::string& inputFile,
         CBC_Mode<AES>::Encryption encryptor;
         encryptor.SetKeyWithIV(key, KEY_SIZE, iv, IV_SIZE);
         
-        // Шифрование файла
-        FileSource fs(inputFile.c_str(), true,
+        // Шифрование файла - ИСПРАВЛЕННЫЙ СИНТАКСИС
+        FileSource(inputFile.c_str(), true,
             new StreamTransformationFilter(encryptor,
                 new FileSink(outputFile.c_str())
             )
         );
         
         std::cout << "Файл успешно зашифрован: " << outputFile << std::endl;
+        
+        // Выводим IV для отладки (опционально)
+        std::string ivHex;
+        StringSource(iv, IV_SIZE, true,
+            new HexEncoder(
+                new StringSink(ivHex)
+            )
+        );
+        std::cout << "IV (hex): " << ivHex << std::endl;
         
     } catch(const Exception& e) {
         std::cerr << "Ошибка при шифровании: " << e.what() << std::endl;
@@ -83,14 +94,20 @@ void DecryptFile(const std::string& inputFile,
         CBC_Mode<AES>::Decryption decryptor;
         decryptor.SetKeyWithIV(key, KEY_SIZE, iv, IV_SIZE);
         
-        // Расшифрование файла
-        FileSource fs(inputFile.c_str(), true,
+        // Расшифрование файла - ИСПРАВЛЕННЫЙ СИНТАКСИС
+        FileSource(inputFile.c_str(), true,
             new StreamTransformationFilter(decryptor,
                 new FileSink(outputFile.c_str())
             )
         );
         
         std::cout << "Файл успешно расшифрован: " << outputFile << std::endl;
+        
+        // Показать содержимое расшифрованного файла
+        std::ifstream decryptedFile(outputFile);
+        std::string content((std::istreambuf_iterator<char>(decryptedFile)),
+                           std::istreambuf_iterator<char>());
+        std::cout << "Содержимое: " << content << std::endl;
         
     } catch(const Exception& e) {
         std::cerr << "Ошибка при расшифровании: " << e.what() << std::endl;
@@ -99,6 +116,9 @@ void DecryptFile(const std::string& inputFile,
 }
 
 int main(int argc, char* argv[]) {
+    // Устанавливаем локаль для поддержки русского текста
+    std::locale::global(std::locale(""));
+    
     // Проверяем аргументы
     if (argc != 5) {
         std::cerr << "Использование:" << std::endl;
